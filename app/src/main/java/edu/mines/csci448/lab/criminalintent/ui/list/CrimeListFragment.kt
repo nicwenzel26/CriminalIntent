@@ -3,9 +3,7 @@ package edu.mines.csci448.lab.criminalintent.ui.list
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -42,8 +40,16 @@ class CrimeListFragment : Fragment() {
         Log.d(logTag, "onCreate() called")
         super.onCreate(savedInstanceState)
 
+        setHasOptionsMenu(true)
+
         val factory = CrimeListViewModelFactory(requireContext())
         crimeListViewModel = ViewModelProvider(this, factory).get(CrimeListViewModel::class.java)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        Log.d(logTag, "onCreateOptionsMenu() called")
+        inflater.inflate(R.menu.fragment_crime_list, menu)
     }
 
     override fun onCreateView(
