@@ -14,6 +14,7 @@ import edu.mines.csci448.lab.criminalintent.R
 import edu.mines.csci448.lab.criminalintent.data.Crime
 import kotlinx.android.synthetic.main.list_item_crime.*
 import java.util.*
+import kotlin.math.log
 
 class CrimeListFragment : Fragment() {
 
@@ -50,6 +51,19 @@ class CrimeListFragment : Fragment() {
         super.onCreateOptionsMenu(menu, inflater)
         Log.d(logTag, "onCreateOptionsMenu() called")
         inflater.inflate(R.menu.fragment_crime_list, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        Log.d(logTag, "onOptionsItemSelected() called")
+        return when(item.itemId) {
+            R.id.new_crime_menu_item -> {
+                val crime = Crime()
+                crimeListViewModel.addCrime(crime)
+                callbacks?.onCrimeSelected(crime.id)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onCreateView(

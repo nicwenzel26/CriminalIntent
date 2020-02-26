@@ -7,6 +7,10 @@ import edu.mines.csci448.lab.criminalintent.data.CrimeRepository
 class CrimeListViewModel(private val crimeRepository: CrimeRepository) : ViewModel() {
 
     val crimesListLiveData = crimeRepository.getCrimes()
+
+    fun addCrime(crime: Crime) {
+        crimeRepository.addCrime(crime)
+    }
 }
 
 
