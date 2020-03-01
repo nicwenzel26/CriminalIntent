@@ -7,6 +7,7 @@ import edu.mines.csci448.lab.criminalintent.R
 import edu.mines.csci448.lab.criminalintent.ui.detail.CrimeDetailFragment
 import edu.mines.csci448.lab.criminalintent.ui.list.CrimeListFragment
 import edu.mines.csci448.lab.criminalintent.ui.list.CrimeListViewModel
+import edu.mines.csci448.lab.criminalintent.ui.pager.CrimePagerFragment
 import java.util.*
 
 class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
@@ -27,7 +28,7 @@ class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
     }
 
     override fun onCrimeSelected(crimeID: UUID) {
-        val fragment = CrimeDetailFragment.newInstance(crimeID)
+        val fragment = CrimePagerFragment()
         supportFragmentManager.beginTransaction().replace(R.id.fragment_container,fragment).addToBackStack(null).commit()
     }
 
