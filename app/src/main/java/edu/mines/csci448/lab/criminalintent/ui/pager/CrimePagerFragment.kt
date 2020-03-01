@@ -7,13 +7,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import edu.mines.csci448.lab.criminalintent.R
+import edu.mines.csci448.lab.criminalintent.data.Crime
 
 class CrimePagerFragment : Fragment() {
     private val logTag = "448.PagerFrag"
 
     private lateinit var crimeViewPager: ViewPager2
+    private lateinit var crimePagerViewModel: CrimePagerViewModel
+    private lateinit var adapter: CrimePagerAdapter
 
 
     override fun onAttach(context: Context) {
@@ -24,6 +29,14 @@ class CrimePagerFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d(logTag, "onCreate() called")
         super.onCreate(savedInstanceState)
+
+        val factory = CrimePagerViewModelFactory(requireContext())
+        crimePagerViewModel = ViewModelProvider(this, factory).get(CrimePagerViewModel::class.java)
+    }
+
+    private fun updateUI(crimes: List<Crime>) {
+        adapter = CrimePagerAdapter(this, crimes)
+        crimeViewPager.adapter = adapter
     }
 
     override fun onCreateView(
@@ -37,6 +50,8 @@ class CrimePagerFragment : Fragment() {
 
         crimeViewPager = view.findViewById(R.id.crime_view_page)
 
+        updateUI(emptyList())
+
         return view
     }
 
@@ -49,6 +64,16 @@ class CrimePagerFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         Log.d(logTag, "onActivityCreated() ")
         super.onActivityCreated(savedInstanceState)
+
+        crimePagerViewModel.crimeListLiveData.observe(
+            viewLifecycleOwner,
+            Observer { crimes ->
+                crimes?.let {
+                    Log.d(logTag, "Got ${crimes.size} crimes")
+                    updateUI(crimes)
+                }
+            }
+        )
     }
 
     override fun onStart() {
