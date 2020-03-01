@@ -12,6 +12,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import edu.mines.csci448.lab.criminalintent.R
 import edu.mines.csci448.lab.criminalintent.data.Crime
+import java.util.*
+
+private const val ARG_CRIME_ID = "crime_id_pager"
 
 class CrimePagerFragment : Fragment() {
     private val logTag = "448.PagerFrag"
@@ -19,6 +22,20 @@ class CrimePagerFragment : Fragment() {
     private lateinit var crimeViewPager: ViewPager2
     private lateinit var crimePagerViewModel: CrimePagerViewModel
     private lateinit var adapter: CrimePagerAdapter
+    private lateinit var crimeID: UUID
+
+
+    companion object {
+        fun newInstance(crimeId: UUID) : CrimePagerFragment {
+            val args = Bundle().apply {
+                putSerializable(ARG_CRIME_ID, crimeId)
+            }
+
+            return CrimePagerFragment().apply {
+                arguments = args
+            }
+        }
+    }
 
 
     override fun onAttach(context: Context) {
@@ -32,11 +49,20 @@ class CrimePagerFragment : Fragment() {
 
         val factory = CrimePagerViewModelFactory(requireContext())
         crimePagerViewModel = ViewModelProvider(this, factory).get(CrimePagerViewModel::class.java)
+
+        crimeID = arguments?.getSerializable(ARG_CRIME_ID) as UUID
     }
 
     private fun updateUI(crimes: List<Crime>) {
         adapter = CrimePagerAdapter(this, crimes)
         crimeViewPager.adapter = adapter
+
+        crimes.forEachIndexed{ position, crime ->
+            if(crime.id == crimeID) {
+                crimeViewPager.currentItem = position
+                return
+            }
+        }
     }
 
     override fun onCreateView(

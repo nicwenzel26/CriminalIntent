@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
     }
 
     override fun onCrimeSelected(crimeID: UUID) {
-        val fragment = CrimePagerFragment()
+        val fragment = CrimePagerFragment.newInstance(crimeID)
         supportFragmentManager.beginTransaction().replace(R.id.fragment_container,fragment).addToBackStack(null).commit()
     }
 
