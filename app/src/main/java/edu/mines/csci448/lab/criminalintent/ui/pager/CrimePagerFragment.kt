@@ -7,9 +7,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.viewpager2.widget.ViewPager2
+import edu.mines.csci448.lab.criminalintent.R
 
 class CrimePagerFragment : Fragment() {
     private val logTag = "448.PagerFrag"
+
+    private lateinit var crimeViewPager: ViewPager2
 
 
     override fun onAttach(context: Context) {
@@ -28,7 +32,12 @@ class CrimePagerFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         Log.d(logTag, "onCreateView() called")
-        return super.onCreateView(inflater, container, savedInstanceState)
+
+        val view = inflater.inflate(R.layout.fragment_pager, container, false)
+
+        crimeViewPager = view.findViewById(R.id.crime_view_page)
+
+        return view
     }
 
 
