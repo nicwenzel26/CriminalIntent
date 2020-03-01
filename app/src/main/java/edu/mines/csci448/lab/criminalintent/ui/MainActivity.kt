@@ -2,6 +2,7 @@ package edu.mines.csci448.lab.criminalintent.ui
 
 import android.os.Bundle
 import android.util.Log
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import edu.mines.csci448.lab.criminalintent.R
 import edu.mines.csci448.lab.criminalintent.ui.detail.CrimeDetailFragment
@@ -13,13 +14,16 @@ import java.util.*
 class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
 
     private val logTag = "448.MainActivity"
+    private var detailContainer: FrameLayout? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(logTag, "onCreate() called")
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_masterdetail)
 
         val currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+
+        detailContainer = findViewById(R.id.detail_fragment_container)
 
         if(currentFragment == null) {
             val fragment = CrimeListFragment()
@@ -29,7 +33,16 @@ class MainActivity : AppCompatActivity(), CrimeListFragment.Callbacks {
 
     override fun onCrimeSelected(crimeID: UUID) {
         val fragment = CrimePagerFragment.newInstance(crimeID)
-        supportFragmentManager.beginTransaction().replace(R.id.fragment_container,fragment).addToBackStack(null).commit()
+
+        if(detailContainer == null) {
+            supportFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).addToBackStack(null).commit()
+        }
+
+        else {
+            supportFragmentManager.beginTransaction().replace(R.id.detail_fragment_container, fragment).commit()
+        }
+
+
     }
 
     override fun onStart() {
