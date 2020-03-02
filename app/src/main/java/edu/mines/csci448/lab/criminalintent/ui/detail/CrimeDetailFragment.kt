@@ -1,6 +1,8 @@
 package edu.mines.csci448.lab.criminalintent.ui.detail
 
 import android.content.Context
+import android.content.Intent
+import android.content.Intent.EXTRA_SUBJECT
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -15,6 +17,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import edu.mines.csci448.lab.criminalintent.R
 import edu.mines.csci448.lab.criminalintent.data.Crime
+import android.text.format.DateFormat
 import java.util.*
 import kotlin.math.log
 
@@ -28,6 +31,7 @@ class CrimeDetailFragment : Fragment() {
     private lateinit var dateButton: Button
     private lateinit var solvedCheckBox: CheckBox
     private lateinit var crimeDetailViewModel: CrimeDetailViewModel
+    private lateinit var crimeReportButton: Button
 
 
     companion object {
@@ -39,6 +43,24 @@ class CrimeDetailFragment : Fragment() {
                 arguments = args
             }
         }
+    }
+
+    private fun generateCrimeReport(): String {
+        val dateString = DateFormat.format("EEE, MMM dd", crime.date)
+
+        val solvedString = if(crime.isSolved) {
+            getString(R.string.crime_report_solved)
+        } else {
+            getString(R.string.crime_report_unsolved)
+        }
+
+        val suspectString = if(crime.suspect == null) {
+            getString(R.string.crime_report_no_suspect)
+        } else {
+            getString(R.string.crime_report_suspect, crime.suspect)
+        }
+
+        return getString(R.string.crime_report, crime.title, dateString, solvedString, suspectString)
     }
 
     override fun onAttach(context: Context) {
@@ -57,6 +79,8 @@ class CrimeDetailFragment : Fragment() {
 
         val crimeId: UUID = arguments?.getSerializable(ARG_CRIME_ID) as UUID
         crimeDetailViewModel.loadCrime(crimeId)
+
+
     }
 
     override fun onCreateView(
@@ -70,10 +94,20 @@ class CrimeDetailFragment : Fragment() {
         titleField = view.findViewById(R.id.crime_title_edit_text) as EditText
         dateButton = view.findViewById(R.id.crime_date_button) as Button
         solvedCheckBox = view.findViewById(R.id.crime_solved_checkbox) as CheckBox
+        crimeReportButton = view.findViewById(R.id.crime_report_button) as Button
 
         dateButton.apply {
             text = crime.date.toString()
             isEnabled = false
+        }
+
+        crimeReportButton.setOnClickListener {
+            var intent = Intent(Intent.ACTION_SEND)
+            intent.type = "text/plain"
+            intent.putExtra(Intent.EXTRA_TEXT, generateCrimeReport())
+            intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject))
+            intent =Intent.createChooser(intent, getString(R.string.send_report))
+            startActivity(intent)
         }
 
         return view
