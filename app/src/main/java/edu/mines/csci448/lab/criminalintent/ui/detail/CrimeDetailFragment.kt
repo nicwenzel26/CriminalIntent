@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.Intent.EXTRA_SUBJECT
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.text.Editable
@@ -21,11 +22,14 @@ import androidx.lifecycle.ViewModelProvider
 import edu.mines.csci448.lab.criminalintent.R
 import edu.mines.csci448.lab.criminalintent.data.Crime
 import android.text.format.DateFormat
+import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import java.util.*
 import kotlin.math.log
 
 private const val ARG_CRIME_ID = "crime_id"
-private const val REQUEST_CODE_CONTACT = 1
+
 
 class CrimeDetailFragment : Fragment() {
 
@@ -37,11 +41,16 @@ class CrimeDetailFragment : Fragment() {
     private lateinit var crimeDetailViewModel: CrimeDetailViewModel
     private lateinit var crimeReportButton: Button
     private lateinit var crimeSuspectButton: Button
+    private lateinit var crimeCallButton : Button
 
     private val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
 
 
     companion object {
+        private const val REQUEST_CODE_CONTACT = 1
+        private const val REQUIRED_CONTACTS_PERMISSION = android.Manifest.permission.READ_CONTACTS
+        private const val REQUIRED_CONTACTS_PERMISSION_READ_CONTACTS = 2
+
         fun newInstance(crimeId: UUID) : CrimeDetailFragment {
             val args = Bundle().apply{
                 putSerializable(ARG_CRIME_ID, crimeId)
@@ -101,7 +110,7 @@ class CrimeDetailFragment : Fragment() {
                 // CrimeDetailFragment.kt where “future code goes here” comment was
                 val contactUri = data.data ?: return
                 // specify which fields you want your query to return values for
-                val queryFields = listOf(ContactsContract.Contacts.DISPLAY_NAME)
+                val queryFields = listOf(ContactsContract.Contacts.DISPLAY_NAME, ContactsContract.Contacts._ID)
                 // perform your query, the contactUri is like a "where" clause
                 val cursor =
                     requireActivity().contentResolver.query(
@@ -125,8 +134,52 @@ class CrimeDetailFragment : Fragment() {
                     crimeDetailViewModel.saveCrime(crime)// save the crime
                     crimeSuspectButton.text = suspect
                     // change the button text
+
+                    // pull out the second column – that is the contact's ID
+                    val contactID = contactIter.getString(1)
+                    val phoneURI = ContactsContract.CommonDataKinds.Phone.CONTENT_URI
+                    val phoneNumberQueryFields = listOf(
+                        ContactsContract.CommonDataKinds.Phone.NUMBER )
+                    val whereClause = "${ContactsContract.CommonDataKinds.Phone.CONTACT_ID} = ?"
+                    val phoneQueryParameters = listOf( contactID.toString() )
+                    val phoneCursor = requireActivity().contentResolver
+                        .query(phoneURI, phoneNumberQueryFields.toTypedArray(),
+                            whereClause, phoneQueryParameters.toTypedArray(),
+                            null)
+                    phoneCursor?.use { phoneIter ->
+                        if( phoneIter.count > 0 ) {
+                            phoneIter.moveToFirst()
+                            crime.suspectNumber = phoneIter.getString(0)
+                            crimeCallButton.isEnabled = true
+                        } else {
+                            // no phone number found
+                            crime.suspectNumber = null
+                            crimeCallButton.isEnabled = false
+                        }
+                    }
                 }
             }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        if(requestCode == REQUIRED_CONTACTS_PERMISSION_READ_CONTACTS) {
+            if (hasContactsPermission()) {
+                crimeSuspectButton.isEnabled = true
+                startActivityForResult(pickContactIntent, REQUEST_CODE_CONTACT)
+            }
+            else {
+                crimeSuspectButton.isEnabled = false
+                Toast.makeText(activity, R.string.crime_reason_for_contacts, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
 
@@ -144,8 +197,25 @@ class CrimeDetailFragment : Fragment() {
         solvedCheckBox = view.findViewById(R.id.crime_solved_checkbox) as CheckBox
         crimeReportButton = view.findViewById(R.id.crime_report_button) as Button
         crimeSuspectButton = view.findViewById(R.id.crime_suspect_button) as Button
+        crimeCallButton = view.findViewById(R.id.crime_call_button) as Button
 
-        crimeSuspectButton.setOnClickListener { startActivityForResult(pickContactIntent, REQUEST_CODE_CONTACT) }
+        if(!hasContactsPermission()) {
+            Log.d(logTag, "user has NOT granted permission to access contacts")
+            if(ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), REQUIRED_CONTACTS_PERMISSION)){
+                Log.d(logTag, "Show an explanation")
+                Toast.makeText(requireContext(), R.string.crime_reason_for_contacts, Toast.LENGTH_SHORT).show()
+            }
+            else {
+                Log.d(logTag, "no explanation needed, request permission")
+
+                requestPermissions(listOf(REQUIRED_CONTACTS_PERMISSION).toTypedArray(), REQUIRED_CONTACTS_PERMISSION_READ_CONTACTS)
+            }
+        }
+
+        else {
+            Log.d(logTag, "user has granted permission to access contacts")
+            startActivityForResult(pickContactIntent, REQUEST_CODE_CONTACT)
+        }
 
         crimeSuspectButton.isEnabled = requireActivity().packageManager.resolveActivity(pickContactIntent, PackageManager.MATCH_DEFAULT_ONLY) != null
 
@@ -161,6 +231,13 @@ class CrimeDetailFragment : Fragment() {
             intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.crime_report_subject))
             intent =Intent.createChooser(intent, getString(R.string.send_report))
             startActivity(intent)
+        }
+
+        crimeCallButton.setOnClickListener {
+            val callIntent = Intent(Intent.ACTION_DIAL)
+            val phoneNumberURI = Uri.parse("tel:${crime.suspectNumber}")
+            callIntent.data = phoneNumberURI
+            startActivity(callIntent)
         }
 
         return view
@@ -183,6 +260,8 @@ class CrimeDetailFragment : Fragment() {
         if(crime.suspect != null) {
             crimeSuspectButton.text = crime.suspect
         }
+
+        crimeCallButton.isEnabled = crime.suspectNumber != null
 
         solvedCheckBox.apply {
             isChecked = crime.isSolved
@@ -220,6 +299,8 @@ class CrimeDetailFragment : Fragment() {
             }
         }
     }
+
+    private fun hasContactsPermission() = ContextCompat.checkSelfPermission(requireContext(), REQUIRED_CONTACTS_PERMISSION) == PackageManager.PERMISSION_GRANTED
 
     override fun onResume() {
         Log.d(logTag, "onResume() called")

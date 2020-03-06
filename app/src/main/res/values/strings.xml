@@ -17,4 +17,8 @@
     <string name="crime_report_suspect">the suspect is %s</string>
     <string name="crime_report_subject">CriminalIntent Crime Report</string>
     <string name="send_report">Send crime report via</string>
+
+    <string name="crime_reason_for_contacts">We would like to provide you with
+        the suspects phone number so you may contact them about this crime.
+        Please consider granting access to contacts. Thank you.</string>
 </resources>
